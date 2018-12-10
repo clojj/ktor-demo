@@ -14,6 +14,7 @@ import io.ktor.response.respondText
 import io.ktor.routing.get
 import io.ktor.routing.routing
 import io.ktor.websocket.webSocket
+import kotlinx.coroutines.delay
 import org.slf4j.event.Level
 import java.time.Duration
 
@@ -40,6 +41,7 @@ fun Application.module(testing: Boolean = false) {
 
     routing {
         get("/") {
+            delay(3000)
             call.respondText("HELLO WORLD!", contentType = ContentType.Text.Plain)
         }
 

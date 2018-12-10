@@ -1,7 +1,10 @@
 import Browser
-import Html exposing (Html, text, pre)
+import Html exposing (Html, button, div, text, pre)
+import Html.Events exposing (onClick)
 import Http
+import RemoteData exposing (..)
 
+import Debug exposing (toString)
 
 
 -- MAIN
@@ -20,19 +23,14 @@ main =
 -- MODEL
 
 
-type Model
-  = Failure
-  | Loading
-  | Success String
+type alias Model
+  = WebData String
 
 
 init : () -> (Model, Cmd Msg)
 init _ =
-  ( Loading
-  , Http.get
-      { url = "/"
-      , expect = Http.expectString GotText
-      }
+  ( NotAsked
+  , Cmd.none
   )
 
 
@@ -41,20 +39,17 @@ init _ =
 
 
 type Msg
-  = GotText (Result Http.Error String)
+  = GotResponse (WebData String)
+  | Get
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    GotText result ->
-      case result of
-        Ok fullText ->
-          (Success fullText, Cmd.none)
-
-        Err _ ->
-          (Failure, Cmd.none)
-
+    Get -> (Loading, Http.get { url = "/"
+                            , expect = Http.expectString (RemoteData.fromResult >> GotResponse)
+                            })
+    GotResponse result -> (result, Cmd.none)
 
 
 -- SUBSCRIPTIONS
@@ -71,12 +66,22 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
+  div []
+    [ button [ onClick Get ] [ text "GET" ]
+    , div [] [ viewStatus model ]
+    ]
+
+viewStatus : Model -> Html Msg
+viewStatus model =
   case model of
-    Failure ->
-      text "I was unable to load your book."
+    NotAsked ->
+      text "not asked"
+
+    Failure err ->
+      text ("Error: " ++ toString err)
 
     Loading ->
-      text "Loading..."
+      text "* LOADING *"
 
     Success fullText ->
       pre [] [ text fullText ]
